@@ -57,7 +57,15 @@ Return your response in JSON format exactly like this:
     });
 
     const jsonStr = response.text?.trim() || "{}";
-    const parsed = JSON.parse(jsonStr);
+    console.log("Gemini API raw response:", jsonStr);
+    
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (parseError) {
+      console.error("JSON Parse Error:", parseError, "Raw string:", jsonStr);
+      parsed = {};
+    }
     
     res.status(200).json({
       englishResponse: parsed.englishResponse || "Sorry, I couldn't generate a response.",
@@ -65,6 +73,6 @@ Return your response in JSON format exactly like this:
     });
   } catch (error) {
     console.error("Error in generate API:", error);
-    res.status(500).json({ error: 'Failed to generate response' });
+    res.status(500).json({ error: 'Failed to generate response', details: error instanceof Error ? error.message : String(error) });
   }
 }

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -9,6 +10,9 @@ import ttsHandler from "./api/tts.js";
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  console.log("Starting server... GEMINI_API_KEY present:", !!process.env.GEMINI_API_KEY);
+  console.log("GEMINI_API_KEY length:", process.env.GEMINI_API_KEY?.length);
 
   // Middleware to parse JSON bodies
   app.use(express.json());
