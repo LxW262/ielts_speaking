@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Practice } from '../types';
 import { generateTTS } from '../services/geminiService';
-import { ArrowLeft, Play, Pause, Loader2, Quote, Edit2, Save, X, Tag } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Loader2, Quote, Edit2, Save, X, Tag, Folder } from 'lucide-react';
 import { format } from 'date-fns';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
