@@ -8,8 +8,14 @@ export default async function handler(req: any, res: any) {
   try {
     const { chineseInput, part, question } = req.body;
     
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("API Key is missing!");
+      return res.status(500).json({ error: 'API key is missing. Please configure GEMINI_API_KEY in your environment.' });
+    }
+
     // Use process.env.GEMINI_API_KEY (Server-side only)
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     
     let partSpecificGuidelines = "";
     if (part === 'Part 1') {
@@ -49,7 +55,7 @@ Return your response in JSON format exactly like this:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",

@@ -1,7 +1,9 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ override: true });
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import fs from "fs";
 
 // Import our Vercel-style API routes
 import generateHandler from "./api/generate.js";
@@ -18,8 +20,15 @@ async function startServer() {
   app.use(express.json());
 
   // Map /api routes to our Vercel handlers
-  app.all("/api/generate", (req, res) => generateHandler(req, res));
-  app.all("/api/tts", (req, res) => ttsHandler(req, res));
+  app.all("/api/v1/generate", (req, res) => generateHandler(req, res));
+  app.all("/api/v1/tts", (req, res) => ttsHandler(req, res));
+
+  app.get("/api/debug-env", (req, res) => {
+    res.json({
+      geminiKey: process.env.GEMINI_API_KEY,
+      viteGeminiKey: process.env.VITE_GEMINI_API_KEY
+    });
+  });
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

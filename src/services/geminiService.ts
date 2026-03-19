@@ -1,6 +1,6 @@
 export async function generateIELTSResponse(chineseInput: string, part: string, question?: string): Promise<{ englishResponse: string, keywords: string[] }> {
   try {
-    const response = await fetch('/api/generate', {
+    const response = await fetch('/api/v1/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9,7 +9,8 @@ export async function generateIELTSResponse(chineseInput: string, part: string, 
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.details || errorData.error || `API error: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -20,14 +21,14 @@ export async function generateIELTSResponse(chineseInput: string, part: string, 
   } catch (e) {
     console.error("Failed to generate response", e);
     return {
-      englishResponse: "Sorry, I couldn't generate a response.",
+      englishResponse: `Sorry, I couldn't generate a response. Error: ${e instanceof Error ? e.message : String(e)}`,
       keywords: []
     };
   }
 }
 
 export async function generateTTS(text: string): Promise<string> {
-  const response = await fetch('/api/tts', {
+  const response = await fetch('/api/v1/tts', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -8,8 +8,14 @@ export default async function handler(req: any, res: any) {
   try {
     const { text } = req.body;
     
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("API Key is missing!");
+      return res.status(500).json({ error: 'API key is missing.' });
+    }
+
     // Use process.env.GEMINI_API_KEY (Server-side only)
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
