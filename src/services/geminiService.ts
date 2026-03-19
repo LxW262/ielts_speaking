@@ -47,3 +47,26 @@ export async function generateTTS(text: string): Promise<string> {
   
   return data.audio;
 }
+
+export async function generateKeywords(englishResponse: string): Promise<string[]> {
+  try {
+    const response = await fetch('/api/v1/keywords', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ englishResponse }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.details || errorData.error || `API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.keywords || [];
+  } catch (e) {
+    console.error("Failed to extract keywords", e);
+    return [];
+  }
+}

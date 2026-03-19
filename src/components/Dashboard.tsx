@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { Plus, Trash2, Mic, PlayCircle, BookOpen, Folder, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface DashboardProps {
-  onNewPractice: () => void;
+  onNewPractice: (part?: 'Part 1' | 'Part 2' | 'Part 3', topic?: string) => void;
   onViewPractice: (practice: Practice) => void;
 }
 
@@ -90,7 +90,7 @@ export default function Dashboard({ onNewPractice, onViewPractice }: DashboardPr
           <p className="text-stone-500">Review and practice your IELTS speaking responses.</p>
         </div>
         <button
-          onClick={onNewPractice}
+          onClick={() => onNewPractice()}
           className="bg-[#5A5A40] text-white px-6 py-3 rounded-full flex items-center gap-2 hover:bg-[#4a4a34] transition-colors shadow-sm"
         >
           <Plus size={20} />
@@ -108,7 +108,7 @@ export default function Dashboard({ onNewPractice, onViewPractice }: DashboardPr
             Start by adding a new practice. Input your Chinese answer, and get a high-scoring English response with native pronunciation.
           </p>
           <button
-            onClick={onNewPractice}
+            onClick={() => onNewPractice()}
             className="text-[#5A5A40] font-medium hover:underline"
           >
             Create your first practice &rarr;
@@ -154,11 +154,23 @@ export default function Dashboard({ onNewPractice, onViewPractice }: DashboardPr
                           {currentPartTopics[topic].length}
                         </span>
                       </div>
-                      {isExpanded ? (
-                        <ChevronDown size={20} className="text-stone-400" />
-                      ) : (
-                        <ChevronRight size={20} className="text-stone-400" />
-                      )}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onNewPractice(activePart, topic);
+                          }}
+                          className="p-1.5 text-stone-400 hover:text-[#5A5A40] hover:bg-stone-200 rounded-md transition-colors"
+                          title="Add practice to this topic"
+                        >
+                          <Plus size={18} />
+                        </button>
+                        {isExpanded ? (
+                          <ChevronDown size={20} className="text-stone-400" />
+                        ) : (
+                          <ChevronRight size={20} className="text-stone-400" />
+                        )}
+                      </div>
                     </button>
 
                     {isExpanded && (

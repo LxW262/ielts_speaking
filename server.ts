@@ -1,13 +1,26 @@
 import dotenv from "dotenv";
-dotenv.config({ override: true });
+dotenv.config();
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import fs from "fs";
 
+try {
+  const devEnvPath = "/app/.dev.env.json";
+  if (fs.existsSync(devEnvPath)) {
+    const devEnv = JSON.parse(fs.readFileSync(devEnvPath, "utf-8"));
+    if (devEnv.GEMINI_API_KEY) {
+      process.env.GEMINI_API_KEY = devEnv.GEMINI_API_KEY;
+    }
+  }
+} catch (e) {
+  console.error("Failed to read /app/.dev.env.json", e);
+}
+
 // Import our Vercel-style API routes
 import generateHandler from "./api/generate.js";
 import ttsHandler from "./api/tts.js";
+import keywordsHandler from "./api/keywords.js";
 
 async function startServer() {
   const app = express();
@@ -22,13 +35,7 @@ async function startServer() {
   // Map /api routes to our Vercel handlers
   app.all("/api/v1/generate", (req, res) => generateHandler(req, res));
   app.all("/api/v1/tts", (req, res) => ttsHandler(req, res));
-
-  app.get("/api/debug-env", (req, res) => {
-    res.json({
-      geminiKey: process.env.GEMINI_API_KEY,
-      viteGeminiKey: process.env.VITE_GEMINI_API_KEY
-    });
-  });
+  app.all("/api/v1/keywords", (req, res) => keywordsHandler(req, res));
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

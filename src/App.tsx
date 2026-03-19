@@ -13,6 +13,7 @@ function MainLayout() {
   const { user, loading, signIn, logOut } = useAuth();
   const [view, setView] = useState<ViewState>('dashboard');
   const [selectedPractice, setSelectedPractice] = useState<Practice | null>(null);
+  const [newPracticeDefaults, setNewPracticeDefaults] = useState<{part?: 'Part 1' | 'Part 2' | 'Part 3', topic?: string}>({});
 
   if (loading) {
     return (
@@ -94,7 +95,10 @@ function MainLayout() {
       <main className="py-8">
         {view === 'dashboard' && (
           <Dashboard
-            onNewPractice={() => setView('new')}
+            onNewPractice={(part, topic) => {
+              setNewPracticeDefaults({ part, topic });
+              setView('new');
+            }}
             onViewPractice={(practice) => {
               setSelectedPractice(practice);
               setView('detail');
@@ -104,6 +108,8 @@ function MainLayout() {
         
         {view === 'new' && (
           <NewPractice
+            initialPart={newPracticeDefaults.part}
+            initialTopic={newPracticeDefaults.topic}
             onBack={() => setView('dashboard')}
             onSuccess={(id) => {
               // We could fetch the new practice and show it, but for simplicity, go back to dashboard

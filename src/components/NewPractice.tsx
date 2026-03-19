@@ -1,26 +1,56 @@
-import React, { useState } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../AuthContext';
-import { generateIELTSResponse } from '../services/geminiService';
-import { ArrowLeft, Loader2, Sparkles, Save } from 'lucide-react';
+import { generateIELTSResponse, generateKeywords } from '../services/geminiService';
+import { ArrowLeft, Loader2, Sparkles, Save, RefreshCw, ChevronDown } from 'lucide-react';
 
 interface NewPracticeProps {
   onBack: () => void;
   onSuccess: (practiceId: string) => void;
+  initialPart?: 'Part 1' | 'Part 2' | 'Part 3';
+  initialTopic?: string;
 }
 
-export default function NewPractice({ onBack, onSuccess }: NewPracticeProps) {
+export default function NewPractice({ onBack, onSuccess, initialPart, initialTopic }: NewPracticeProps) {
   const { user } = useAuth();
-  const [part, setPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>('Part 1');
-  const [topic, setTopic] = useState('');
+  const [part, setPart] = useState<'Part 1' | 'Part 2' | 'Part 3'>(initialPart || 'Part 1');
+  const [topic, setTopic] = useState(initialTopic || '');
+  const [existingTopics, setExistingTopics] = useState<string[]>([]);
+  const [showTopicDropdown, setShowTopicDropdown] = useState(false);
   const [question, setQuestion] = useState('');
   const [chineseInput, setChineseInput] = useState('');
   const [englishResponse, setEnglishResponse] = useState('');
   const [keywords, setKeywords] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchTopics = async () => {
+      try {
+        const q = query(
+          collection(db, 'practices'),
+          where('userId', '==', user.uid),
+          where('part', '==', part)
+        );
+        const snapshot = await getDocs(q);
+        const topics = new Set<string>();
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.topic) topics.add(data.topic);
+        });
+        setExistingTopics(Array.from(topics).sort());
+      } catch (err) {
+        console.error("Error fetching topics:", err);
+      }
+    };
+    
+    fetchTopics();
+  }, [user, part]);
 
   const handleGenerate = async () => {
     if (!chineseInput.trim()) {
@@ -40,6 +70,26 @@ export default function NewPractice({ onBack, onSuccess }: NewPracticeProps) {
       setError(err.message || 'Failed to generate response. Please try again.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleExtractKeywords = async () => {
+    if (!englishResponse.trim()) {
+      setError('Please provide an English response first.');
+      return;
+    }
+
+    setIsExtracting(true);
+    setError('');
+
+    try {
+      const extracted = await generateKeywords(englishResponse);
+      setKeywords(extracted.join(', '));
+    } catch (err: any) {
+      console.error("Error extracting keywords:", err);
+      setError(err.message || 'Failed to extract keywords. Please try again.');
+    } finally {
+      setIsExtracting(false);
     }
   };
 
@@ -134,18 +184,48 @@ export default function NewPractice({ onBack, onSuccess }: NewPracticeProps) {
                 </div>
               </div>
 
-              <div>
+              <div className="relative">
                 <label htmlFor="topic" className="block text-sm font-medium text-stone-700 mb-2">
                   Topic (e.g., Hometown, Work, Hobbies)
                 </label>
-                <input
-                  id="topic"
-                  type="text"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g., Hometown"
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:border-[#5A5A40] focus:ring-1 focus:ring-[#5A5A40] outline-none transition-all"
-                />
+                <div className="relative">
+                  <input
+                    id="topic"
+                    type="text"
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    onFocus={() => setShowTopicDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowTopicDropdown(false), 200)}
+                    placeholder="e.g., Hometown"
+                    className="w-full pl-4 pr-10 py-3 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:border-[#5A5A40] focus:ring-1 focus:ring-[#5A5A40] outline-none transition-all"
+                  />
+                  {existingTopics.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowTopicDropdown(!showTopicDropdown)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                    >
+                      <ChevronDown size={20} />
+                    </button>
+                  )}
+                </div>
+                {showTopicDropdown && existingTopics.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-stone-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    {existingTopics.filter(t => t.toLowerCase().includes(topic.toLowerCase())).map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => {
+                          setTopic(t);
+                          setShowTopicDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700 transition-colors"
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -211,9 +291,23 @@ export default function NewPractice({ onBack, onSuccess }: NewPracticeProps) {
               </div>
 
               <div>
-                <label htmlFor="keywords" className="block text-sm font-medium text-stone-700 mb-2">
-                  Keywords / Key Phrases (Comma separated)
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label htmlFor="keywords" className="block text-sm font-medium text-stone-700">
+                    Keywords / Key Phrases (Comma separated)
+                  </label>
+                  <button
+                    onClick={handleExtractKeywords}
+                    disabled={isExtracting || !englishResponse.trim()}
+                    className="text-xs flex items-center gap-1 text-[#5A5A40] hover:text-[#4a4a34] disabled:opacity-50 transition-colors"
+                  >
+                    {isExtracting ? (
+                      <Loader2 className="animate-spin" size={14} />
+                    ) : (
+                      <RefreshCw size={14} />
+                    )}
+                    Extract from English
+                  </button>
+                </div>
                 <input
                   id="keywords"
                   type="text"
