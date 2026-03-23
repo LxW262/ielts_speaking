@@ -81,10 +81,12 @@ service cloud.firestore {
 
     function isValidPractice() {
       let data = request.resource.data;
-      return hasOnlyAllowedFields(['userId', 'question', 'part', 'chineseInput', 'englishResponse', 'createdAt']) &&
+      return hasOnlyAllowedFields(['userId', 'question', 'topic', 'keywords', 'part', 'chineseInput', 'englishResponse', 'createdAt']) &&
              hasRequiredFields(['userId', 'part', 'englishResponse', 'createdAt']) &&
              data.userId == request.auth.uid &&
              isValidOptionalString('question', 0, 1000) &&
+             isValidOptionalString('topic', 0, 100) &&
+             (!('keywords' in data) || (data.keywords is list && data.keywords.size() <= 50)) &&
              data.part in ['Part 1', 'Part 2', 'Part 3'] &&
              isValidOptionalString('chineseInput', 0, 5000) &&
              data.englishResponse is string && data.englishResponse.size() > 0 && data.englishResponse.size() <= 10000 &&

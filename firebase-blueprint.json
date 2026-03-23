@@ -43,6 +43,17 @@
           "type": "string",
           "description": "The IELTS question (optional)."
         },
+        "topic": {
+          "type": "string",
+          "description": "The topic of the practice."
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Keywords or key phrases extracted from the response."
+        },
         "part": {
           "type": "string",
           "enum": ["Part 1", "Part 2", "Part 3"],
